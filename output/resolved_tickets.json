@@ -1,0 +1,308 @@
+{
+  "title": "Campus Customs: tickets resolved in the Problem 9 run",
+  "generated_at_utc": "2026-10-14T04:51:47+00:00",
+  "database": "data/campus_customs_new.db",
+  "how_it_ran": "Reset from the dashboard, then tickets 101, 102, 103 were started from the React dashboard in that order with no reset between them. Agents only prepared payments and purchases; the owner approved each one on the dashboard before the next ticket.",
+  "starting_checking_balance": 3400.0,
+  "reset_at_utc": "2026-10-14T04:15:35.233+00:00",
+  "ending_checking_balance": 516.0,
+  "tickets": [
+    {
+      "id": 101,
+      "subject": "Bulldog tee",
+      "requester": "Tauhid Zaman",
+      "type": "customer_order",
+      "final_status": "resolved",
+      "outcome": "Size S of CC-TEE-WHITE is out of stock (M 5, L 3, XL 2 in stock). Inventory reported the linked $840 rush-reprint invoice 501 (Bulldog Print Co, open, 3 days overdue, 5-day lead time). Customer Service drafted a reply offering M, L, or XL with no restock date. Nothing was prepared for approval, so cash did not change.",
+      "runs": [
+        {
+          "run_id": "run-a0236cd3e59c",
+          "status": "done",
+          "started_utc": "2026-10-14T04:15:49.792+00:00",
+          "finished_utc": "2026-10-14T04:16:55.636+00:00",
+          "model": "gpt-6-luna-global",
+          "usage": {
+            "requests": 10,
+            "tool_calls": 8,
+            "input_tokens": 36722,
+            "output_tokens": 2326
+          },
+          "error": null
+        }
+      ],
+      "agents": [
+        {
+          "agent": "boss",
+          "asked_by": [],
+          "handed_off_to": [
+            "customer_service",
+            "inventory"
+          ],
+          "contribution": "Size S is out of stock, while sizes M, L, and XL are available; the linked rush-reprint invoice has a 5-day lead time, but no delivery/restock date was provided. A reply draft gives the customer available options without promising a restock date; the ticket was recorded as resolved.",
+          "mcp_tools_used": [
+            "get_ticket",
+            "update_ticket"
+          ],
+          "prepared": []
+        },
+        {
+          "agent": "inventory",
+          "asked_by": [
+            "boss"
+          ],
+          "handed_off_to": [],
+          "contribution": "CC-TEE-WHITE size S is out of stock; size M has 5, L has 3, and XL has 2 available, all in Aisle B. Linked invoice 501 is an open $840.0 invoice to Bulldog Print Co for a rush reprint of CC-TEE-WHITE S; its listed lead time is 5 days, and it was due 2026-08-28, 3 days overdue as of shop date 2026-08-31. The lead time is not a delivery date, so the restock date is unknown.",
+          "mcp_tools_used": [
+            "check_inventory",
+            "get_invoice"
+          ],
+          "prepared": []
+        },
+        {
+          "agent": "customer_service",
+          "asked_by": [
+            "boss"
+          ],
+          "handed_off_to": [],
+          "contribution": "Size S is out of stock; sizes M, L, and XL are available now. The draft asks whether they prefer an available size or would like to be notified when S is back, without promising a date or hold.",
+          "mcp_tools_used": [
+            "get_ticket",
+            "check_inventory"
+          ],
+          "prepared": []
+        }
+      ],
+      "delegations": [
+        "boss -> inventory",
+        "boss -> customer_service"
+      ],
+      "reply_draft": "Hi Tauhid, size S is out of stock right now. We have the tee in sizes M, L, and XL, or we can let you know when size S is back. Which would you prefer? We’ll get back to you within 1 business day.\n\nCampus Customs",
+      "human_approvals": [],
+      "cash_change": 0.0,
+      "note": "Invoice 501 ($840) is still open and unpaid: no agent prepared it, and the Boss did not list it for the owner."
+    },
+    {
+      "id": 102,
+      "subject": "Rent due",
+      "requester": "Elm City Properties",
+      "type": "rent_notice",
+      "final_status": "resolved",
+      "outcome": "Facilities confirmed the notice against lease 1 ($2,400 due 2026-09-02, 2 days after the shop date). Accounting checked cash ($3,400) and prepared transaction 1 for the rent. The owner approved it on the dashboard: checking went from $3,400 to $1,000 and the lease's next due date moved to 2026-10-02.",
+      "runs": [
+        {
+          "run_id": "run-eeeec8c6eb4f",
+          "status": "done",
+          "started_utc": "2026-10-14T04:17:18.782+00:00",
+          "finished_utc": "2026-10-14T04:17:22.080+00:00",
+          "model": "gpt-6-luna-global",
+          "usage": {
+            "requests": 11,
+            "tool_calls": 8,
+            "input_tokens": 38798,
+            "output_tokens": 1465
+          },
+          "error": null
+        }
+      ],
+      "agents": [
+        {
+          "agent": "boss",
+          "asked_by": [],
+          "handed_off_to": [
+            "facilities"
+          ],
+          "contribution": "The lease confirms rent of $2400.0 is due on 2026-09-02. Payment transaction 1 for $2400.0 has been prepared and awaits your approval; no payment has been made.",
+          "mcp_tools_used": [
+            "get_ticket",
+            "update_ticket"
+          ],
+          "prepared": []
+        },
+        {
+          "agent": "facilities",
+          "asked_by": [
+            "boss"
+          ],
+          "handed_off_to": [
+            "accounting"
+          ],
+          "contribution": "The notice matches the lease: Elm City Properties is the landlord, rent is $2400.0, and it is due 2026-09-02 (2 days from the shop date, matching the ticket). Accounting prepared transaction 1 for owner approval; no money has moved, and no landlord reply draft is needed based on the notice.",
+          "mcp_tools_used": [
+            "get_ticket",
+            "get_rent_due"
+          ],
+          "prepared": [
+            "Prepared transaction 1 for rent payment of $2400.0; pending owner approval."
+          ]
+        },
+        {
+          "agent": "accounting",
+          "asked_by": [
+            "facilities"
+          ],
+          "handed_off_to": [],
+          "contribution": "Prepared rent payment transaction 1 for lease 1 in the amount of $2400.0; it is pending your approval, and no money has moved. Checking would be $1000.0 if approved (above the $100 floor and $500 warning threshold).",
+          "mcp_tools_used": [
+            "get_cash_position",
+            "prepare_payment"
+          ],
+          "prepared": [
+            "Prepared transaction 1 for rent of $2400.0; checking balance would be $1000.0 if approved."
+          ]
+        }
+      ],
+      "delegations": [
+        "boss -> facilities",
+        "facilities -> accounting"
+      ],
+      "reply_draft": null,
+      "human_approvals": [
+        {
+          "transaction_id": 1,
+          "kind": "rent",
+          "description": "Pay rent for lease 1 (Chapel Street shop) to Elm City Properties ($2,400.00), due 2026-09-02",
+          "amount": 2400.0,
+          "prepared_by": "accounting",
+          "approved_by": "Abishek Suresh",
+          "approved_at_utc": "2026-10-14T04:21:12.839+00:00",
+          "approved_on": "dashboard (POST /api/transactions/1/approve)",
+          "payment_id": 1,
+          "checking_before": 3400.0,
+          "checking_after": 1000.0,
+          "effect": "Lease 1 next_due moved from 2026-09-02 to 2026-10-02."
+        }
+      ],
+      "cash_change": -2400.0,
+      "note": "The run took 3 seconds because the Portkey gateway returned cached model responses for prompts identical to an earlier run; every MCP tool call ran live (transaction 1 was created in this run). The owner's first Approve attempt sent no request (most likely the button was still disabled because no name was typed); the second attempt went through."
+    },
+    {
+      "id": 103,
+      "subject": "Bulk hoodie discount",
+      "requester": "Yale AI Club",
+      "type": "price_override",
+      "final_status": "resolved",
+      "outcome": "Inventory found 8 of the 20 size M hoodies (12 short) and prepared transaction 2: a reorder of 22 from Bulldog Print Co at $22 each ($484). Accounting priced the order ($58 list, $1,160) and checked the allowed 10% bulk discount ($52.20 each, $1,044, above the $22 cost). Customer Service drafted a reply offering $52.20 each with 8 available now and no restock date. The owner approved the reorder on the dashboard: checking went from $1,000 to $516.",
+      "runs": [
+        {
+          "run_id": "run-96da750f17a3",
+          "status": "failed",
+          "started_utc": "2026-10-14T04:21:40.648+00:00",
+          "finished_utc": "2026-10-14T04:23:04.068+00:00",
+          "model": null,
+          "usage": {
+            "requests": 0,
+            "tool_calls": 0,
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "error": "ModelHTTPError: status_code: 500, model_name: gpt-6-luna, body: {'status': 'failure', 'message': 'Internal Server Error', 'request_id': '25a765a9-a276-4de2-b80c-d2fea6174625'}"
+        },
+        {
+          "run_id": "run-194e1dae42af",
+          "status": "done",
+          "started_utc": "2026-10-14T04:28:45.686+00:00",
+          "finished_utc": "2026-10-14T04:49:24.201+00:00",
+          "model": "gpt-6-luna-global",
+          "usage": {
+            "requests": 16,
+            "tool_calls": 13,
+            "input_tokens": 61405,
+            "output_tokens": 3539
+          },
+          "error": null
+        }
+      ],
+      "agents": [
+        {
+          "agent": "boss",
+          "asked_by": [],
+          "handed_off_to": [
+            "accounting",
+            "customer_service",
+            "inventory"
+          ],
+          "contribution": "The requested 20 hoodies qualify for the checked 10% bulk offer: $52.20 each, $1,044.00 total, above cost. Inventory found 8 size M on hand and prepared a 22-unit reorder for $484.00; the ticket update records that transaction as approved, but no delivery date is confirmed. The customer reply is drafted and ready for review and sending.",
+          "mcp_tools_used": [
+            "get_ticket",
+            "update_ticket"
+          ],
+          "prepared": []
+        },
+        {
+          "agent": "inventory",
+          "asked_by": [
+            "boss"
+          ],
+          "handed_off_to": [],
+          "contribution": "There are 8 size M hoodies in Aisle A, so supply is short by 12 for the requested 20. Other sizes available are S (4), L (14), and XL (6); S is low stock. Prepared a reorder for 22 size M hoodies from Bulldog Print Co (the 12-unit shortfall plus 10 extra), pending your approval; no delivery date is confirmed.",
+          "mcp_tools_used": [
+            "get_ticket",
+            "check_inventory x2",
+            "list_vendors",
+            "prepare_purchase"
+          ],
+          "prepared": [
+            "Prepared purchase transaction 2 for 22 CC-HOOD-NAVY size M hoodies from Bulldog Print Co at $484.00; pending approval."
+          ]
+        },
+        {
+          "agent": "accounting",
+          "asked_by": [
+            "boss"
+          ],
+          "handed_off_to": [],
+          "contribution": "For 20 CC-HOOD-NAVY hoodies, the list price is $58.00 each ($1,160.00 total); the allowed 10% bulk discount makes the price $52.20 each ($1,044.00 total), saving $116.00. The discounted price remains above unit cost; inventory reports 8 on hand and transaction 2 for 22 more pending approval ($484.00), with no delivery date confirmed.",
+          "mcp_tools_used": [
+            "get_pricing",
+            "check_discount"
+          ],
+          "prepared": []
+        },
+        {
+          "agent": "customer_service",
+          "asked_by": [
+            "boss"
+          ],
+          "handed_off_to": [],
+          "contribution": "Draft offers the checked bulk price of $52.20 each ($1,044.00 for 20), notes 8 size M hoodies are currently available and the remainder would require restock, without promising a date or hold. It asks how the club would like to proceed and says they’ll hear back within 1 business day.",
+          "mcp_tools_used": [
+            "get_ticket"
+          ],
+          "prepared": []
+        }
+      ],
+      "delegations": [
+        "boss -> inventory",
+        "boss -> accounting",
+        "boss -> customer_service"
+      ],
+      "reply_draft": "Hi Yale AI Club,\n\nWe can offer the bulk price of $52.20 each, or $1,044.00 for 20 hoodies. We currently have 8 in size M; the rest would need a restock, and we don’t have a confirmed date yet. Let us know how you’d like to proceed. We’ll be in touch within 1 business day.\n\nCampus Customs",
+      "human_approvals": [
+        {
+          "transaction_id": 2,
+          "kind": "purchase",
+          "description": "Reorder 22 x Basic Hoodie Big Yale (CC-HOOD-NAVY, size M) from Bulldog Print Co at $22.00 each ($484.00)",
+          "amount": 484.0,
+          "prepared_by": "inventory",
+          "approved_by": "Abishek Suresh",
+          "approved_at_utc": "2026-10-14T04:31:32.562+00:00",
+          "approved_on": "dashboard (POST /api/transactions/2/approve)",
+          "payment_id": 2,
+          "checking_before": 1000.0,
+          "checking_after": 516.0,
+          "effect": "Vendor paid for 22 x CC-HOOD-NAVY size M. Stock arrives after the vendor's lead time; inventory is unchanged until then."
+        }
+      ],
+      "cash_change": -484.0,
+      "note": "First attempt (run-96da750f17a3) failed on the Boss's first model request with HTTP 500 from the Portkey gateway; nothing had run. Fix: the model client now retries up to 6 times with backoff and a 120 s timeout (backend/llm.py). The retry (run-194e1dae42af) took about 20 minutes because the gateway hung on several requests, but it finished cleanly. The owner approved transaction 2 from the dashboard while the run was still in progress, right after Inventory prepared it."
+    }
+  ],
+  "cash_check": {
+    "starting": 3400.0,
+    "inflows": 0.0,
+    "outflows": 2884.0,
+    "ending_computed": 516.0,
+    "ending_in_cash_accounts": 516.0,
+    "payments_rows": 2
+  }
+}

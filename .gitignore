@@ -1,0 +1,22 @@
+# Secrets: the real key stays on my machine. .env.example is the template that gets committed.
+.env
+.env.*
+!.env.example
+
+# Python virtual environment and caches (pip install -r requirements.txt recreates them)
+.venv/
+__pycache__/
+*.pyc
+
+# Frontend packages and build output (npm install / npm run build recreate them)
+node_modules/
+frontend/dist/
+
+# Leftovers from a database reset or an interrupted write. The two .db files themselves ARE committed.
+*.reset-tmp
+*.db-journal
+
+# Local Claude Code settings, and Mac / Word temp files
+.claude/
+.DS_Store
+~$*

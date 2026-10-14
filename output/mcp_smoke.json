@@ -1,0 +1,448 @@
+{
+  "title": "Campus Customs MCP smoke test (Problem 4)",
+  "run_at": "2026-10-12T10:33:50-04:00",
+  "how_it_was_run": "Each test started a fresh headless Claude Code session (claude -p) in the HW 5 folder, which loads the campus-customs server from .mcp.json. The prompt describes the ticket in plain English and does not name a tool. Bash, Read, Grep, Glob, and edit tools were blocked, so the vibe coder could only get data through the MCP server, and auto-memory was off so the session saw only the prompt. Each tool output was then compared field by field with a direct read-only SQL query on data/campus_customs_new.db.",
+  "vibe_coder": {
+    "client": "Claude Code 2.1.296",
+    "model": "claude-opus-5-5",
+    "working_directory": "/Users/abisheksuresh/Documents/MBA Classes/MGT 409 - AI Foundations for Managers/HW 5",
+    "connection_file": ".mcp.json",
+    "connection_json": {
+      "mcpServers": {
+        "campus-customs": {
+          "type": "stdio",
+          "command": ".venv/bin/python",
+          "args": [
+            "mcp_server/server.py"
+          ],
+          "env": {}
+        }
+      }
+    },
+    "mcp_server_status": {
+      "name": "campus-customs",
+      "status": "connected",
+      "source": "project"
+    },
+    "campus_customs_tools_available": [
+      "mcp__campus-customs__check_inventory",
+      "mcp__campus-customs__get_pricing",
+      "mcp__campus-customs__get_rent_due"
+    ]
+  },
+  "summary": {
+    "tools_tested": 3,
+    "passed": 3,
+    "failed": 0,
+    "database_unchanged_by_tests": true
+  },
+  "tests": [
+    {
+      "ticket": 101,
+      "tool": "check_inventory",
+      "claude_code_tool_name": "mcp__campus-customs__check_inventory",
+      "prompt": "Ticket 101: Tauhid Zaman wants to order one Classic Bulldog Tee (SKU CC-TEE-WHITE) in size S. Use the campus-customs MCP server to check how many we have on hand in that size and where it is shelved. Report the exact values the tool returns.",
+      "status": "PASS",
+      "tool_input": {
+        "sku": "CC-TEE-WHITE",
+        "size": "S"
+      },
+      "tool_output": {
+        "sku": "CC-TEE-WHITE",
+        "name": "Classic Bulldog Tee",
+        "sizes": [
+          {
+            "size": "S",
+            "qty": 0,
+            "location": "Aisle B",
+            "in_stock": false
+          }
+        ],
+        "total_qty": 0
+      },
+      "database_check": {
+        "database": "data/campus_customs_new.db",
+        "sql": "SELECT name, size, qty, location FROM inventory WHERE sku = ? AND size = ? ORDER BY rowid",
+        "rows": [
+          [
+            "Classic Bulldog Tee",
+            "S",
+            0,
+            "Aisle B"
+          ]
+        ],
+        "fields_checked": 7,
+        "fields_matching": 7,
+        "comparisons": [
+          {
+            "field": "name",
+            "tool_value": "Classic Bulldog Tee",
+            "db_value": "Classic Bulldog Tee",
+            "match": true
+          },
+          {
+            "field": "number of sizes",
+            "tool_value": 1,
+            "db_value": 1,
+            "match": true
+          },
+          {
+            "field": "size S: size",
+            "tool_value": "S",
+            "db_value": "S",
+            "match": true
+          },
+          {
+            "field": "size S: qty",
+            "tool_value": 0,
+            "db_value": 0,
+            "match": true
+          },
+          {
+            "field": "size S: location",
+            "tool_value": "Aisle B",
+            "db_value": "Aisle B",
+            "match": true
+          },
+          {
+            "field": "size S: in_stock (qty > 0)",
+            "tool_value": false,
+            "db_value": false,
+            "match": true
+          },
+          {
+            "field": "total_qty (sum of qty)",
+            "tool_value": 0,
+            "db_value": 0,
+            "match": true
+          }
+        ]
+      },
+      "vibe_coder_reply": "**Ticket 101:** We can't fill Tauhid Zaman's order right now because the Classic Bulldog Tee in size S is out of stock.\n\nHere are the exact values `check_inventory` returned for SKU `CC-TEE-WHITE`, size S:\n\n| Field | Value |\n|---|---|\n| Product name | Classic Bulldog Tee |\n| Size | S |\n| Quantity on hand | **0** |\n| Shelf location | **Aisle B** |\n| In stock | **false** |\n| Total quantity | 0 |\n\nThe ticket asks for 1 unit and we have 0, so we shouldn't promise the order. We could tell the customer it's back-ordered, offer another size, or wait for a restock. I can check other sizes of this shirt if that would help.",
+      "other_tool_calls": [
+        {
+          "name": "ToolSearch",
+          "input": {
+            "query": "select:mcp__campus-customs__check_inventory",
+            "max_results": 1
+          }
+        }
+      ],
+      "session": {
+        "session_id": "2509a853-8642-4d31-84d0-d1348a2091ad",
+        "model": "claude-opus-5-5",
+        "mcp_server_status": "connected",
+        "duration_s": 9.6,
+        "turns": 3,
+        "exit_code": 0
+      }
+    },
+    {
+      "ticket": 102,
+      "tool": "get_rent_due",
+      "claude_code_tool_name": "mcp__campus-customs__get_rent_due",
+      "prompt": "Ticket 102: Elm City Properties emailed that the shop rent is due in 2 days, and the ticket links lease 1. Use the campus-customs MCP server to look up that lease and tell me the rent amount, the landlord, the next due date, and how many days until it is due. Report the exact values the tool returns.",
+      "status": "PASS",
+      "tool_input": {
+        "lease_id": 1
+      },
+      "tool_output": {
+        "lease_id": 1,
+        "space_name": "Chapel Street shop",
+        "landlord": "Elm City Properties",
+        "monthly_rent": 2400,
+        "next_due": "2026-09-02",
+        "notes": null,
+        "shop_date": "2026-08-31",
+        "days_until_due": 2
+      },
+      "database_check": {
+        "database": "data/campus_customs_new.db",
+        "sql": "SELECT id, space_name, landlord, monthly_rent, next_due, notes FROM leases WHERE id = ?; SELECT date_today FROM desk",
+        "rows": [
+          [
+            1,
+            "Chapel Street shop",
+            "Elm City Properties",
+            2400.0,
+            "2026-09-02",
+            null
+          ],
+          [
+            "2026-08-31"
+          ]
+        ],
+        "fields_checked": 8,
+        "fields_matching": 8,
+        "comparisons": [
+          {
+            "field": "lease_id",
+            "tool_value": 1,
+            "db_value": 1,
+            "match": true
+          },
+          {
+            "field": "space_name",
+            "tool_value": "Chapel Street shop",
+            "db_value": "Chapel Street shop",
+            "match": true
+          },
+          {
+            "field": "landlord",
+            "tool_value": "Elm City Properties",
+            "db_value": "Elm City Properties",
+            "match": true
+          },
+          {
+            "field": "monthly_rent",
+            "tool_value": 2400,
+            "db_value": 2400.0,
+            "match": true
+          },
+          {
+            "field": "next_due",
+            "tool_value": "2026-09-02",
+            "db_value": "2026-09-02",
+            "match": true
+          },
+          {
+            "field": "notes",
+            "tool_value": null,
+            "db_value": null,
+            "match": true
+          },
+          {
+            "field": "shop_date (desk.date_today)",
+            "tool_value": "2026-08-31",
+            "db_value": "2026-08-31",
+            "match": true
+          },
+          {
+            "field": "days_until_due (next_due - shop_date)",
+            "tool_value": 2,
+            "db_value": 2,
+            "match": true
+          }
+        ]
+      },
+      "vibe_coder_reply": "The `get_rent_due` tool returned these values for lease 1 (Chapel Street shop):\n\n| Field | Value |\n|---|---|\n| Rent amount | $2,400 (monthly) |\n| Landlord | Elm City Properties |\n| Next due date | 2026-09-02 |\n| Days until due | 2 |\n\nThis agrees with the email: same landlord, and rent due in 2 days.\n\n**The 2 days isn't counted from today.** The tool counts from the shop's internal date (`shop_date` = 2026-08-31), not the real date. Today is 2026-10-12, so the 2026-09-02 due date was 40 days ago. If the shop's date is meant to match the real date, it's out of date. Either this rent is overdue or the lease record wasn't moved on to the next month. Check which before paying or replying to Elm City Properties.",
+      "other_tool_calls": [
+        {
+          "name": "ToolSearch",
+          "input": {
+            "query": "select:mcp__campus-customs__get_rent_due",
+            "max_results": 1
+          }
+        }
+      ],
+      "session": {
+        "session_id": "fab399c8-ddee-4e70-a50c-8964e682c029",
+        "model": "claude-opus-5-5",
+        "mcp_server_status": "connected",
+        "duration_s": 12.6,
+        "turns": 3,
+        "exit_code": 0
+      },
+      "note_after_problem_9": "Correct when tested (2026-10-12). Problem 9 later paid this rent, so the working copy now has next_due 2026-10-02 (32 days); see recheck_after_problem_9. data/campus_customs.db still has 2026-09-02."
+    },
+    {
+      "ticket": 103,
+      "tool": "get_pricing",
+      "claude_code_tool_name": "mcp__campus-customs__get_pricing",
+      "prompt": "Ticket 103: the Yale AI Club wants 20 Basic Hoodie Big Yale (SKU CC-HOOD-NAVY) in size M and is asking for a bulk discount. Use the campus-customs MCP server to get the pricing for 20 units: unit cost, list price, margin per unit, and the list and cost totals. Report the exact values the tool returns.",
+      "status": "PASS",
+      "tool_input": {
+        "sku": "CC-HOOD-NAVY",
+        "quantity": 20
+      },
+      "tool_output": {
+        "sku": "CC-HOOD-NAVY",
+        "unit_cost": 22,
+        "list_price": 58,
+        "margin_per_unit": 36,
+        "margin_pct": 62.1,
+        "quantity": 20,
+        "list_total": 1160,
+        "cost_total": 440
+      },
+      "database_check": {
+        "database": "data/campus_customs_new.db",
+        "sql": "SELECT unit_cost, list_price FROM pricing WHERE sku = ?",
+        "rows": [
+          [
+            22.0,
+            58.0
+          ]
+        ],
+        "fields_checked": 8,
+        "fields_matching": 8,
+        "comparisons": [
+          {
+            "field": "sku",
+            "tool_value": "CC-HOOD-NAVY",
+            "db_value": "CC-HOOD-NAVY",
+            "match": true
+          },
+          {
+            "field": "unit_cost",
+            "tool_value": 22,
+            "db_value": 22.0,
+            "match": true
+          },
+          {
+            "field": "list_price",
+            "tool_value": 58,
+            "db_value": 58.0,
+            "match": true
+          },
+          {
+            "field": "margin_per_unit (list - cost)",
+            "tool_value": 36,
+            "db_value": 36.0,
+            "match": true
+          },
+          {
+            "field": "margin_pct",
+            "tool_value": 62.1,
+            "db_value": 62.1,
+            "match": true
+          },
+          {
+            "field": "quantity",
+            "tool_value": 20,
+            "db_value": 20,
+            "match": true
+          },
+          {
+            "field": "list_total (qty x list)",
+            "tool_value": 1160,
+            "db_value": 1160.0,
+            "match": true
+          },
+          {
+            "field": "cost_total (qty x cost)",
+            "tool_value": 440,
+            "db_value": 440.0,
+            "match": true
+          }
+        ]
+      },
+      "vibe_coder_reply": "The `get_pricing` tool returned the following for **CC-HOOD-NAVY** (Basic Hoodie Big Yale) at 20 units:\n\n| Field | Value |\n|---|---|\n| Unit cost | $22 |\n| List price | $58 |\n| Margin per unit | $36 (62.1%) |\n| Quantity | 20 |\n| List total | $1,160 |\n| Cost total | $440 |\n\nThe totals are consistent: 20 × $58 = $1,160 and 20 × $22 = $440. That leaves $720 of total margin at list price, so a bulk discount has room to work with. The price can't go below $22/unit ($440 for the order) without selling below cost.\n\n**We only have 8 in size M, not 20.** I also checked inventory, and all 8 are in Aisle A. Before quoting the club, we'll need to decide whether to offer 8 now and restock the other 12, or check with them about mixing in other sizes.",
+      "other_tool_calls": [
+        {
+          "name": "ToolSearch",
+          "input": {
+            "query": "select:mcp__campus-customs__get_pricing,mcp__campus-customs__check_inventory",
+            "max_results": 5
+          }
+        },
+        {
+          "name": "mcp__campus-customs__check_inventory",
+          "input": {
+            "sku": "CC-HOOD-NAVY",
+            "size": "M"
+          }
+        }
+      ],
+      "session": {
+        "session_id": "9657337e-516e-4ff5-84bc-5dccfc67287a",
+        "model": "claude-opus-5-5",
+        "mcp_server_status": "connected",
+        "duration_s": 11.2,
+        "turns": 4,
+        "exit_code": 0
+      }
+    }
+  ],
+  "recheck_after_problem_9": {
+    "run_at": "2026-10-14",
+    "why": "Problem 9 changed data/campus_customs_new.db after this smoke test: paying ticket 102's rent (payment 1, $2,400, approved by me) moved lease 1's next_due from 2026-09-02 to 2026-10-02. So the get_rent_due output above (next_due 2026-09-02, 2 days) is what the working copy held on 2026-10-12. It still matches the original data/campus_customs.db. To show the tools still match the final working copy, I called all three again.",
+    "how": "Called each tool through the campus-customs MCP server from Claude Code (same .mcp.json connection, read-only tools), then compared the key fields with a read-only SQL query on data/campus_customs_new.db.",
+    "results": [
+      {
+        "tool": "check_inventory",
+        "tool_input": {
+          "sku": "CC-TEE-WHITE",
+          "size": "S"
+        },
+        "tool_output": {
+          "sku": "CC-TEE-WHITE",
+          "name": "Classic Bulldog Tee",
+          "sizes": [
+            {
+              "size": "S",
+              "qty": 0,
+              "location": "Aisle B",
+              "in_stock": false
+            }
+          ],
+          "total_qty": 0
+        },
+        "matches_working_db_now": true,
+        "working_db_values": {
+          "qty": 0,
+          "location": "Aisle B"
+        },
+        "same_as_original_test_output": true
+      },
+      {
+        "tool": "get_rent_due",
+        "tool_input": {
+          "lease_id": 1
+        },
+        "tool_output": {
+          "lease_id": 1,
+          "space_name": "Chapel Street shop",
+          "landlord": "Elm City Properties",
+          "monthly_rent": 2400,
+          "next_due": "2026-10-02",
+          "notes": null,
+          "shop_date": "2026-08-31",
+          "days_until_due": 32
+        },
+        "matches_working_db_now": true,
+        "working_db_values": {
+          "monthly_rent": 2400.0,
+          "next_due": "2026-10-02",
+          "shop_date": "2026-08-31",
+          "days_until_due": 32
+        },
+        "same_as_original_test_output": false
+      },
+      {
+        "tool": "get_pricing",
+        "tool_input": {
+          "sku": "CC-HOOD-NAVY",
+          "quantity": 20
+        },
+        "tool_output": {
+          "sku": "CC-HOOD-NAVY",
+          "unit_cost": 22,
+          "list_price": 58,
+          "margin_per_unit": 36,
+          "margin_pct": 62.1,
+          "quantity": 20,
+          "list_total": 1160,
+          "cost_total": 440
+        },
+        "matches_working_db_now": true,
+        "working_db_values": {
+          "unit_cost": 22.0,
+          "list_price": 58.0
+        },
+        "same_as_original_test_output": true
+      }
+    ],
+    "summary": {
+      "tools_rechecked": 3,
+      "match_working_db_now": 3,
+      "unchanged_since_original_test": [
+        "check_inventory",
+        "get_pricing"
+      ],
+      "changed_by_problem_9": [
+        "get_rent_due"
+      ]
+    }
+  }
+}

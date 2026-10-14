@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Customs — Database Viewer</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface: #fcfcfb; --sunk: #f0efec;
+    --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --brand: #00356b; --accent: #2a78d6;
+    --good: #0ca30c; --warn: #fab219; --crit: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --sunk: #2c2c2a;
+      --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --brand: #0d2a4f; --accent: #3987e5;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --sunk: #2c2c2a;
+    --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --brand: #0d2a4f; --accent: #3987e5;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .viz-root { min-height: 100vh; background: var(--page); color: var(--ink);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { background: var(--brand); color: #fff; padding: 24px 40px; display: flex; align-items: flex-start; gap: 16px; }
+  header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+  header p { margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.82); }
+  header code { background: rgba(255,255,255,0.12); padding: 1px 6px; border-radius: 4px; }
+  .theme { margin-left: auto; background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; flex: none; }
+  .theme:hover { background: rgba(255,255,255,0.2); }
+  main { max-width: 1280px; margin: 0 auto; padding: 24px 40px 48px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .tile .label { font-size: 12px; color: var(--ink-2); }
+  .tile .value { font-size: 24px; font-weight: 600; margin: 2px 0 4px; }
+  .tile .sub { font-size: 12px; color: var(--ink-2); }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--grid); margin-bottom: 20px; overflow-x: auto; }
+  .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--ink-2);
+    padding: 10px 14px; font: inherit; font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .tabs button:hover { color: var(--ink); }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  .tabs .n { color: var(--muted); font-weight: 400; margin-left: 4px; }
+  .panel { display: none; } .panel.active { display: block; }
+
+  h2 { font-size: 16px; font-weight: 600; margin: 28px 0 10px; }
+  h2:first-child { margin-top: 0; }
+  h2 .n { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
+  .note { color: var(--ink-2); font-size: 13px; margin: -4px 0 12px; }
+
+  .card-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  th { font-size: 12px; font-weight: 600; color: var(--ink-2); background: var(--sunk); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr:hover td { background: var(--sunk); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td code, .mono { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .null { color: var(--muted); font-style: italic; }
+  .empty { padding: 18px 16px; color: var(--ink-2); background: var(--surface); border: 1px dashed var(--axis); border-radius: 12px; }
+
+  .status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--ink); }
+  .status .ico { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%;
+    font-size: 10px; font-weight: 700; color: #fff; flex: none; }
+  .s-good .ico { background: var(--good); }
+  .s-warn .ico { background: var(--warn); color: #0b0b0b; }
+  .s-crit .ico { background: var(--crit); }
+  .s-neutral .ico { background: var(--axis); color: var(--ink); }
+  .chip { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--sunk); color: var(--ink-2); border: 1px solid var(--border); }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .toolbar input, .toolbar select { font: inherit; padding: 8px 12px; border: 1px solid var(--axis); border-radius: 8px;
+    background: var(--surface); color: var(--ink); }
+  .toolbar input { min-width: 320px; }
+  .raw td.nw { white-space: nowrap; }
+  .raw th, .raw td { padding: 8px 10px; font-size: 13px; }
+  .raw td { min-width: 0; }
+  .toolbar .count { color: var(--ink-2); font-size: 13px; margin-left: auto; }
+
+  .tickets { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; }
+  .ticket { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .ticket .top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .ticket .id { font-weight: 600; }
+  .ticket h3 { margin: 8px 0 2px; font-size: 16px; font-weight: 600; }
+  .ticket .meta { color: var(--ink-2); font-size: 13px; }
+  .ticket .notes { margin: 10px 0 0; padding: 8px 12px; background: var(--sunk); border-radius: 8px; }
+  .ticket dl { margin: 12px 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 13px; }
+  .ticket dt { color: var(--ink-2); }
+  .ticket dd { margin: 0; }
+
+  details { margin: 0 0 10px; }
+  summary { cursor: pointer; color: var(--ink-2); font-size: 13px; }
+  pre { margin: 8px 0 0; padding: 12px 14px; background: var(--sunk); border-radius: 8px; overflow-x: auto;
+    font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
+  @media (max-width: 640px) { header, main { padding-left: 16px; padding-right: 16px; } .tickets { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<header>
+  <div>
+    <h1>Campus Customs — Database Viewer</h1>
+    <p>Read-only snapshot of <code id="src"></code> · <span id="gen"></span></p>
+  </div>
+  <button class="theme" id="theme" type="button">Dark mode</button>
+</header>
+<main>
+  <section class="kpis" id="kpis" aria-label="Summary"></section>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <section class="panel" role="tabpanel" id="p-tickets"></section>
+  <section class="panel" role="tabpanel" id="p-inventory">
+    <div class="toolbar">
+      <input type="search" id="invSearch" placeholder="Filter by SKU, product, size, or aisle…" aria-label="Filter inventory">
+      <select id="invLevel" aria-label="Stock level">
+        <option value="">All stock levels</option><option value="crit">Out of stock (0)</option>
+        <option value="warn">Low (1–5)</option><option value="good">In stock (6+)</option>
+      </select>
+      <span class="count" id="invCount"></span>
+    </div>
+    <div class="card-wrap"><table id="invTable"></table></div>
+  </section>
+  <section class="panel" role="tabpanel" id="p-money"></section>
+  <section class="panel" role="tabpanel" id="p-vendors"></section>
+  <section class="panel" role="tabpanel" id="p-raw"></section>
+</main>
+</div>
+<script>
+const D = {"order": ["desk", "tickets", "inventory", "pricing", "vendors", "invoices", "leases", "cash_accounts", "payments"], "tables": {"desk": {"cols": ["date_today", "notes"], "rows": [["2026-08-31", null]], "sql": "CREATE TABLE desk (\n            date_today TEXT NOT NULL,\n            notes TEXT\n        )"}, "tickets": {"cols": ["id", "type", "requester", "subject", "sku", "size", "qty", "lease_id", "invoice_id", "status", "notes", "created_at"], "rows": [[101, "customer_order", "Tauhid Zaman", "Bulldog tee", "CC-TEE-WHITE", "S", 1, null, 501, "open", "Needs a tee in size S.", "2026-08-31T09:15:00-04:00"], [102, "rent_notice", "Elm City Properties", "Rent due", null, null, null, 1, null, "open", "Email: shop rent due in 2 days.", "2026-08-31T11:05:00-04:00"], [103, "price_override", "Yale AI Club", "Bulk hoodie discount", "CC-HOOD-NAVY", "M", 20, null, null, "open", "Student org wants 20 hoodies, size M, asking for a bulk discount.", "2026-08-31T16:55:00-04:00"]], "sql": "CREATE TABLE tickets (\n            id INTEGER PRIMARY KEY,\n            type TEXT NOT NULL,\n            requester TEXT NOT NULL,\n            subject TEXT NOT NULL,\n            sku TEXT,\n            size TEXT,\n            qty INTEGER,\n            lease_id INTEGER,\n            invoice_id INTEGER,\n            status TEXT NOT NULL,\n            notes TEXT,\n            created_at TEXT NOT NULL,\n            FOREIGN KEY (lease_id) REFERENCES leases(id),\n            FOREIGN KEY (invoice_id) REFERENCES invoices(id)\n        )"}, "inventory": {"cols": ["sku", "name", "size", "qty", "location"], "rows": [["CC-HOOD-NAVY", "Basic Hoodie Big Yale", "S", 4, "Aisle A"], ["CC-HOOD-NAVY", "Basic Hoodie Big Yale", "M", 8, "Aisle A"], ["CC-HOOD-NAVY", "Basic Hoodie Big Yale", "L", 14, "Aisle A"], ["CC-HOOD-NAVY", "Basic Hoodie Big Yale", "XL", 6, "Aisle A"], ["CC-TEE-WHITE", "Classic Bulldog Tee", "S", 0, "Aisle B"], ["CC-TEE-WHITE", "Classic Bulldog Tee", "M", 5, "Aisle B"], ["CC-TEE-WHITE", "Classic Bulldog Tee", "L", 3, "Aisle B"], ["CC-TEE-WHITE", "Classic Bulldog Tee", "XL", 2, "Aisle B"], ["CC-HAT-BLUE", "Yale Cap", "OS", 40, "Aisle C"], ["CC-MUG-CREST", "Crest Mug", "OS", 0, "Aisle D"]], "sql": "CREATE TABLE inventory (\n            sku TEXT NOT NULL,\n            name TEXT NOT NULL,\n            size TEXT NOT NULL,\n            qty INTEGER NOT NULL,\n            location TEXT NOT NULL,\n            PRIMARY KEY (sku, size)\n        )"}, "pricing": {"cols": ["sku", "unit_cost", "list_price"], "rows": [["CC-HOOD-NAVY", 22.0, 58.0], ["CC-TEE-WHITE", 8.0, 28.0], ["CC-HAT-BLUE", 6.0, 22.0], ["CC-MUG-CREST", 3.5, 14.0]], "sql": "CREATE TABLE pricing (\n            sku TEXT PRIMARY KEY,\n            unit_cost REAL NOT NULL,\n            list_price REAL NOT NULL\n        )"}, "vendors": {"cols": ["id", "name", "specialty", "lead_days"], "rows": [[1, "Bulldog Print Co", "apparel reprint", 5], [2, "Elm City Gifts", "mugs and small goods", 3], [3, "QuickShip CT", "local courier", 1]], "sql": "CREATE TABLE vendors (\n            id INTEGER PRIMARY KEY,\n            name TEXT NOT NULL,\n            specialty TEXT NOT NULL,\n            lead_days INTEGER NOT NULL\n        )"}, "invoices": {"cols": ["id", "vendor_id", "amount", "due_date", "status", "description"], "rows": [[501, 1, 840.0, "2026-08-28", "open", "Rush reprint CC-TEE-WHITE S"]], "sql": "CREATE TABLE invoices (\n            id INTEGER PRIMARY KEY,\n            vendor_id INTEGER NOT NULL,\n            amount REAL NOT NULL,\n            due_date TEXT NOT NULL,\n            status TEXT NOT NULL,\n            description TEXT,\n            FOREIGN KEY (vendor_id) REFERENCES vendors(id)\n        )"}, "leases": {"cols": ["id", "space_name", "landlord", "monthly_rent", "next_due", "notes"], "rows": [[1, "Chapel Street shop", "Elm City Properties", 2400.0, "2026-09-02", null]], "sql": "CREATE TABLE leases (\n            id INTEGER PRIMARY KEY,\n            space_name TEXT NOT NULL,\n            landlord TEXT NOT NULL,\n            monthly_rent REAL NOT NULL,\n            next_due TEXT NOT NULL,\n            notes TEXT\n        )"}, "cash_accounts": {"cols": ["name", "balance", "date"], "rows": [["checking", 3400.0, "2026-08-31"]], "sql": "CREATE TABLE cash_accounts (\n            name TEXT PRIMARY KEY,\n            balance REAL NOT NULL,\n            date TEXT NOT NULL\n        )"}, "payments": {"cols": ["id", "kind", "ref_id", "amount", "account", "paid_at", "approved_by"], "rows": [], "sql": "CREATE TABLE payments (\n            id INTEGER PRIMARY KEY,\n            kind TEXT NOT NULL,\n            ref_id INTEGER,\n            amount REAL NOT NULL,\n            account TEXT NOT NULL,\n            paid_at TEXT NOT NULL,\n            approved_by TEXT NOT NULL\n        )"}}, "label": "data/campus_customs.db", "generated": "Oct 12, 2026 at 10:02 AM"};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rows = name => { const t = D.tables[name]; return t ? t.rows.map(r => Object.fromEntries(t.cols.map((c, i) => [c, r[i]]))) : []; };
+
+const desk = rows("desk")[0] || {}, today = desk.date_today;
+const inv = rows("inventory"), pricing = rows("pricing"), vendors = rows("vendors"), invoices = rows("invoices"),
+      leases = rows("leases"), cash = rows("cash_accounts"), payments = rows("payments"), tickets = rows("tickets");
+const by = (list, key) => Object.fromEntries(list.map(r => [r[key], r]));
+const priceBy = by(pricing, "sku"), vendorBy = by(vendors, "id"), invoiceBy = by(invoices, "id"), leaseBy = by(leases, "id");
+const stockBy = Object.fromEntries(inv.map(r => [r.sku + "|" + r.size, r]));
+
+// Dates are calendar dates, compared against the shop's date in desk.date_today (not the viewer's clock)
+const day = s => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+const daysFrom = s => Math.round((day(s) - day(today)) / 864e5);
+const fmtDate = s => s ? new Date(day(s)).toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric", timeZone: "UTC"}) : "";
+const fmtTime = s => { const [h, m] = s.slice(11, 16).split(":").map(Number); return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"} ET`; };
+const money = n => "$" + Number(n).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const moneyTile = n => "$" + Number(n).toLocaleString("en-US", {maximumFractionDigits: 0});
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+const label = s => String(s).replace(/_/g, " ").replace(/^./, c => c.toUpperCase());
+
+const ICON = {good: "✓", warn: "!", crit: "✕", neutral: "•"};
+const status = (lvl, text) => `<span class="status s-${lvl}"><span class="ico" aria-hidden="true">${ICON[lvl]}</span>${esc(text)}</span>`;
+const stockLevel = q => q === 0 ? ["crit", "Out of stock"] : q <= 5 ? ["warn", "Low"] : ["good", "In stock"];
+const dueLevel = (date, open) => {
+  if (!open) return ["neutral", "Closed"];
+  const d = daysFrom(date);
+  if (d < 0) return ["crit", `${plural(-d, "day")} overdue`];
+  if (d === 0) return ["crit", "Due today"];
+  return [d <= 7 ? "warn" : "neutral", `Due in ${plural(d, "day")}`];
+};
+const isOpen = r => String(r.status).toLowerCase() === "open";
+const cell = v => v === null ? '<span class="null">NULL</span>' : esc(v);
+const text = v => v === null || v === "" ? '<span class="null">—</span>' : esc(v);
+
+$("#src").textContent = D.label;
+$("#gen").textContent = "refreshed " + D.generated;
+
+// Summary tiles
+const units = inv.reduce((a, r) => a + r.qty, 0), outs = inv.filter(r => r.qty === 0).length, lows = inv.filter(r => r.qty > 0 && r.qty <= 5).length;
+const openInv = invoices.filter(isOpen), overdue = openInv.filter(r => daysFrom(r.due_date) < 0);
+const nextLease = [...leases].sort((a, b) => a.next_due.localeCompare(b.next_due))[0];
+const tiles = [
+  ["Shop date", fmtDate(today), esc(desk.notes || "From the desk table")],
+  ["Open tickets", tickets.filter(isOpen).length, `of ${tickets.length} total`],
+  ["Cash on hand", moneyTile(cash.reduce((a, r) => a + r.balance, 0)), cash.length ? `${esc(cash.map(r => r.name).join(", "))} · as of ${fmtDate(cash[0].date)}` : "No accounts"],
+  ["Open vendor invoices", moneyTile(openInv.reduce((a, r) => a + r.amount, 0)), overdue.length ? status("crit", `${overdue.length} overdue`) : status("good", "None overdue")],
+  ["Next rent", nextLease ? moneyTile(nextLease.monthly_rent) : "—", nextLease ? status(...dueLevel(nextLease.next_due, true)) + ` · ${fmtDate(nextLease.next_due)}` : "No leases"],
+  ["Units in stock", units.toLocaleString(), status("crit", `${outs} out`) + " &nbsp;" + status("warn", `${lows} low`)],
+];
+$("#kpis").innerHTML = tiles.map(([l, v, s]) => `<div class="tile"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${s}</div></div>`).join("");
+
+// Tabs
+const TABS = [["tickets", "Tickets", tickets.length], ["inventory", "Inventory & pricing", inv.length], ["money", "Cash, rent & invoices", null],
+              ["vendors", "Vendors", vendors.length], ["raw", "All tables", D.order.length]];
+$("#tabs").innerHTML = TABS.map(([id, name, n], i) =>
+  `<button role="tab" type="button" data-tab="${id}" aria-controls="p-${id}" aria-selected="${i === 0}">${name}${n === null ? "" : `<span class="n">${n}</span>`}</button>`).join("");
+const show = id => {
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === id));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === "p-" + id));
+  history.replaceState(null, "", "#" + id);
+};
+$("#tabs").onclick = e => { const b = e.target.closest("button"); if (b) show(b.dataset.tab); };
+show(TABS.some(t => t[0] === location.hash.slice(1)) ? location.hash.slice(1) : "tickets");
+
+// Theme toggle (overrides the OS setting both ways)
+const themeBtn = $("#theme");
+const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+const syncTheme = () => themeBtn.textContent = isDark() ? "Light mode" : "Dark mode";
+themeBtn.onclick = () => { document.documentElement.dataset.theme = isDark() ? "light" : "dark"; syncTheme(); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncTheme); syncTheme();
+
+const tableHTML = (head, body) => `<div class="card-wrap"><table><thead><tr>${head.map(([h, cls]) => `<th${cls ? ` class="${cls}"` : ""}>${h}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></div>`;
+
+// Tickets
+$("#p-tickets").innerHTML = tickets.length ? `<div class="tickets">${tickets.map(t => {
+  const links = [];
+  if (t.sku) {
+    const s = stockBy[t.sku + "|" + t.size], p = priceBy[t.sku];
+    links.push(["Item", `<code>${esc(t.sku)}</code>${t.size ? ` · size ${esc(t.size)}` : ""}${s ? ` · ${esc(s.name)}` : ""}`]);
+    if (t.qty !== null) links.push(["Requested", plural(t.qty, "unit")]);
+    links.push(["On hand", s ? `${s.qty} &nbsp;${status(...stockLevel(s.qty))}${t.qty !== null && s.qty > 0 && s.qty < t.qty ? ` &nbsp;<span class="meta">(${t.qty - s.qty} short)</span>` : ""}` : '<span class="null">No inventory row</span>']);
+    if (p) links.push(["Price", `${money(p.list_price)} list · ${money(p.unit_cost)} cost${t.qty > 1 ? ` · ${t.qty} × list = ${money(t.qty * p.list_price)}` : ""}`]);
+  }
+  if (t.invoice_id !== null) {
+    const x = invoiceBy[t.invoice_id];
+    links.push(["Invoice", x ? `#${x.id} · ${esc(vendorBy[x.vendor_id]?.name ?? "Vendor " + x.vendor_id)} · ${money(x.amount)} · due ${fmtDate(x.due_date)} &nbsp;${status(...dueLevel(x.due_date, isOpen(x)))}` : `#${t.invoice_id} (not found)`]);
+  }
+  if (t.lease_id !== null) {
+    const l = leaseBy[t.lease_id];
+    links.push(["Lease", l ? `#${l.id} · ${esc(l.space_name)} · ${money(l.monthly_rent)}/mo · due ${fmtDate(l.next_due)} &nbsp;${status(...dueLevel(l.next_due, true))}` : `#${t.lease_id} (not found)`]);
+  }
+  return `<article class="ticket">
+    <div class="top"><span class="id">#${t.id}</span><span class="chip">${esc(label(t.type))}</span>${status(isOpen(t) ? "warn" : "good", label(t.status))}</div>
+    <h3>${esc(t.subject)}</h3>
+    <div class="meta">From ${esc(t.requester)} · ${fmtDate(t.created_at)}, ${fmtTime(t.created_at)}</div>
+    ${t.notes ? `<p class="notes">${esc(t.notes)}</p>` : ""}
+    ${links.length ? `<dl>${links.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>` : ""}
+  </article>`; }).join("")}</div>` : '<div class="empty">No tickets.</div>';
+
+// Inventory & pricing
+function renderInv() {
+  const q = $("#invSearch").value.trim().toLowerCase(), lvl = $("#invLevel").value;
+  const list = inv.filter(r => (!lvl || stockLevel(r.qty)[0] === lvl) && (!q || [r.sku, r.name, r.size, r.location].join(" ").toLowerCase().includes(q)));
+  $("#invCount").textContent = `${list.length} of ${inv.length} rows`;
+  $("#invTable").innerHTML = `<thead><tr><th>SKU</th><th>Product</th><th>Size</th><th class="num">On hand</th><th>Stock level</th><th>Location</th>
+    <th class="num">Unit cost</th><th class="num">List price</th><th class="num">Margin</th></tr></thead><tbody>${list.length ? list.map(r => {
+      const p = priceBy[r.sku];
+      return `<tr><td><code>${esc(r.sku)}</code></td><td>${esc(r.name)}</td><td>${esc(r.size)}</td><td class="num">${r.qty}</td><td>${status(...stockLevel(r.qty))}</td><td>${esc(r.location)}</td>
+        ${p ? `<td class="num">${money(p.unit_cost)}</td><td class="num">${money(p.list_price)}</td><td class="num">${money(p.list_price - p.unit_cost)} (${Math.round((p.list_price - p.unit_cost) / p.list_price * 100)}%)</td>`
+            : '<td class="num null" colspan="3">No pricing row</td>'}</tr>`; }).join("")
+      : '<tr><td colspan="9" class="null">No rows match.</td></tr>'}</tbody>`;
+}
+$("#invSearch").oninput = $("#invLevel").onchange = renderInv; renderInv();
+
+// Cash, rent & invoices
+$("#p-money").innerHTML = `
+  <h2>Cash accounts<span class="n">${cash.length}</span></h2>
+  ${tableHTML([["Account"], ["Balance", "num"], ["As of"]], cash.map(r => `<tr><td>${esc(label(r.name))}</td><td class="num">${money(r.balance)}</td><td>${fmtDate(r.date)}</td></tr>`).join(""))}
+  <h2>Rent (leases)<span class="n">${leases.length}</span></h2>
+  ${tableHTML([["Lease"], ["Space"], ["Landlord"], ["Monthly rent", "num"], ["Next due"], ["Timing"], ["Notes"]], leases.map(r =>
+    `<tr><td>#${r.id}</td><td>${esc(r.space_name)}</td><td>${esc(r.landlord)}</td><td class="num">${money(r.monthly_rent)}</td><td>${fmtDate(r.next_due)}</td><td>${status(...dueLevel(r.next_due, true))}</td><td>${text(r.notes)}</td></tr>`).join(""))}
+  <h2>Vendor invoices<span class="n">${invoices.length}</span></h2>
+  ${tableHTML([["Invoice"], ["Vendor"], ["Description"], ["Amount", "num"], ["Due"], ["Status"], ["Timing"]], invoices.map(r =>
+    `<tr><td>#${r.id}</td><td>${esc(vendorBy[r.vendor_id]?.name ?? r.vendor_id)}</td><td>${text(r.description)}</td><td class="num">${money(r.amount)}</td><td>${fmtDate(r.due_date)}</td><td>${esc(label(r.status))}</td><td>${status(...dueLevel(r.due_date, isOpen(r)))}</td></tr>`).join(""))}
+  <h2>Payments<span class="n">${payments.length}</span></h2>
+  ${payments.length ? tableHTML([["Payment"], ["Kind"], ["Pays"], ["Amount", "num"], ["From account"], ["Paid at"], ["Approved by"]], payments.map(r =>
+    `<tr><td>#${r.id}</td><td>${esc(label(r.kind))}</td><td>${r.ref_id === null ? '<span class="null">NULL</span>' : "#" + r.ref_id}</td><td class="num">${money(r.amount)}</td><td>${esc(r.account)}</td><td>${esc(r.paid_at)}</td><td>${esc(r.approved_by)}</td></tr>`).join(""))
+    : '<div class="empty">No payments recorded yet.</div>'}`;
+
+// Vendors
+$("#p-vendors").innerHTML = `<h2>Vendors<span class="n">${vendors.length}</span></h2>
+  ${tableHTML([["ID"], ["Vendor"], ["Specialty"], ["Lead time", "num"], ["Open invoices", "num"]], vendors.map(v => {
+    const owed = invoices.filter(x => x.vendor_id === v.id && isOpen(x));
+    return `<tr><td>${v.id}</td><td>${esc(v.name)}</td><td>${esc(v.specialty)}</td><td class="num">${plural(v.lead_days, "day")}</td><td class="num">${owed.length ? `${money(owed.reduce((a, x) => a + x.amount, 0))} (${owed.length})` : "—"}</td></tr>`; }).join(""))}`;
+
+// All tables, exactly as stored
+$("#p-raw").innerHTML = `<p class="note">Every table exactly as stored in the database, with its CREATE statement.</p>` + D.order.map(name => {
+  const t = D.tables[name];
+  return `<h2 id="t-${name}"><code>${name}</code><span class="n">${plural(t.rows.length, "row")}</span></h2>
+    <details><summary>Show CREATE statement</summary><pre>${esc(t.sql)}</pre></details>
+    ${t.rows.length ? (() => {
+      const num = t.cols.map((_, i) => t.rows.some(r => typeof r[i] === "number") && t.rows.every(r => typeof r[i] === "number" || r[i] === null));
+      return `<div class="raw">` + tableHTML(t.cols.map((c, i) => [`<code>${esc(c)}</code>`, num[i] ? "num" : ""]),
+        t.rows.map(r => `<tr>${r.map((v, i) => `<td class="${num[i] ? "num" : !/\s/.test(String(v ?? "")) || String(v).length <= 22 ? "nw" : ""}">${cell(v)}</td>`).join("")}</tr>`).join("")) + `</div>`;
+    })() : '<div class="empty">No rows.</div>'}`;
+}).join("");
+</script>
+</body>
+</html>
